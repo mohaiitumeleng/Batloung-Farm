@@ -1,0 +1,23 @@
+require('dotenv').config();
+const express=require('express');
+const cors=require('cors');
+const {testConnection}=require('./config/db');
+const {errorHandler}=require('./middleware/errors');
+const {login,requireAuth}=require('./middleware/auth');
+const app=express();
+app.use(cors({origin:process.env.CLIENT_ORIGIN||'http://localhost:5173'}));
+app.use(express.json({limit:'1mb'}));
+app.get('/',(req,res)=>res.json({message:'Batloung Farm API is running',version:'1.0.0'}));
+app.get('/api/health',async(req,res)=>{const connected=await testConnection();res.status(connected?200:503).json({server:'running',database:connected?'connected':'disconnected'});});
+app.post('/api/auth/login',login);
+app.use('/api',requireAuth);
+app.use('/api/supplier-prices',require('./routes/supplierPriceRoutes'));
+app.get('/api/auth/me',(req,res)=>res.json({username:process.env.ADMIN_USERNAME}));
+const routes=['suppliers','fruits','stock','vendors','purchases','sales','reports','payments'];
+for(const name of routes){const filename=name==='stock'?'stockRoutes':name==='reports'?'reportRoutes':name==='payments'?'paymentRoutes':name==='sales'?'salesRoutes':`${name.slice(0,-1)}Routes`;app.use(`/api/${name}`,require(`./routes/${filename}`));}
+app.get('/api',(req,res)=>res.json({application:'Batloung Farm Distribution System',endpoints:routes.map(s=>`/api/${s}`)}));
+app.use((req,res)=>res.status(404).json({error:'Endpoint not found.'}));
+app.use(errorHandler);
+const PORT=Number(process.env.PORT||5000);
+const server=app.listen(PORT,()=>{console.log(`Server running on port ${PORT}`);testConnection();});
+server.on('error',e=>console.error('Server startup error:',e.message));

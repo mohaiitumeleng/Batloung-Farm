@@ -1,0 +1,3 @@
+const m=require('../models/paymentModel');const {fail,id,moneyCents,asyncHandler}=require('../middleware/errors');
+exports.outstanding=asyncHandler(async(req,res)=>res.json(await m.outstanding()));
+exports.add=asyncHandler(async(req,res)=>{if(!id(req.params.saleId))throw fail('Invalid sale ID.');if(!['CASH','MOBILE_MONEY'].includes(req.body?.payment_method))throw fail('Received payments must be CASH or MOBILE_MONEY (credit is not a payment).');const cents=moneyCents(req.body?.amount);if(cents===null||cents<=0)throw fail('Enter a positive payment amount.');res.json({message:'Payment recorded.',sale:await m.addPayment(req.params.saleId,cents,req.body.payment_method)});});

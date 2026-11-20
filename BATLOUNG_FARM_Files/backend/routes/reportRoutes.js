@@ -1,0 +1,1 @@
+const r=require('express').Router(),c=require('../controllers/reportController');r.get('/top-fruits',c.topFruits);r.get('/revenue',c.revenue);r.get('/top-vendor',c.topVendor);r.get('/stock',c.stock);r.get('/balances',c.balances);module.exports=r;
